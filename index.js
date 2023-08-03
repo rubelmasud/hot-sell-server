@@ -26,9 +26,50 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
+        const usersCollection = client.db("hot-sell-sopping").collection('users')
+        const featuredProductsCollection = client.db("hot-sell-sopping").collection('featuredProducts')
+        const myCartCollection = client.db("hot-sell-sopping").collection('myCart')
+        const productsCollection = client.db("hot-sell-sopping").collection('products')
 
+        app.post('/users', async (req, res) => {
+            const user = req.body
+            console.log(user);
+            const query = { email: user.email }
+            const existingUser = await usersCollection.findOne(query)
+            if (existingUser) {
+                return res.send({ message: "Is User Already Exist" })
+            }
+            const result = await usersCollection.insertOne(user)
+            res.send(result)
+        })
+
+        app.post('/cartProduct', async (req, res) => {
+            const product = req.body
+            const result = await myCartCollection.insertOne(product)
+            res.send(result)
+        })
+
+        app.get('/myCartProducts', async (req, res) => {
+            const email = req.query.email
+            if (!email) {
+                res.send([])
+            }
+            const query = { email: email }
+            const result = await myCartCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        app.get('/featuredProducts', async (req, res) => {
+            const result = await featuredProductsCollection.find().toArray()
+            res.send(result)
+        })
+
+        app.get('/products', async (req, res) => {
+            const result = await productsCollection.find().toArray()
+            res.send(result)
+        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
